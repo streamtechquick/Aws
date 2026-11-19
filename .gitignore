@@ -1,0 +1,7 @@
+.env
+*.pid
+__pycache__/
+.venv/
+bot/.venv/
+logs/*.log
+instances/*/*.qcow2
