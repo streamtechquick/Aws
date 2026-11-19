@@ -1,59 +1,22 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
-ROOT="$(cd "$(dirname "$0")" && pwd)"
-
-header() {
-  clear 2>/dev/null || true
-  echo "================================"
-  echo "       ARABI VPS MANAGER"
-  echo "================================"
-  echo
-}
-
-status() {
-  echo "HOST: $(hostname)"
-  echo "OS: $(uname -s)"
-  echo "CPU: $(nproc 2>/dev/null || echo unknown)"
-  echo
-  free -h 2>/dev/null || true
-  echo
-  df -h "$ROOT"
-  echo
-  if [ -e /dev/kvm ]; then
-    echo "KVM: AVAILABLE"
-  else
-    echo "KVM: NOT AVAILABLE"
-    echo "VM provisioning is disabled on this host."
-  fi
-}
-
-list_vms() {
-  echo "===== CONFIGURED INSTANCES ====="
-  find "$ROOT/instances" -mindepth 1 -maxdepth 1 -type d \
-    -printf '%f\n' 2>/dev/null || true
-}
-
-while true; do
-  header
-  echo "1. Host status"
-  echo "2. List instances"
-  echo "3. Check KVM capability"
-  echo "4. Exit"
-  echo
-  read -r -p "Select: " choice
-  case "$choice" in
-    1) status ;;
-    2) list_vms ;;
-    3)
-      if [ -e /dev/kvm ]; then
-        echo "KVM device detected."
-      else
-        echo "KVM unavailable. No VM will be created."
-      fi
-      ;;
-    4) exit 0 ;;
-    *) echo "Invalid option." ;;
-  esac
-  echo
-  read -r -p "Press Enter..." _
-done
+cd "$(dirname "$0")"
+if [ ! -x .venv/bin/python ]; then
+  python3 -m venv .venv
+  .venv/bin/pip install -r requirements.txt
+fi
+echo "ARABI VPS Manager"
+echo "1) Host status"
+echo "2) List VMs"
+echo "3) Start API server"
+echo "4) Start Discord bot"
+echo "5) Exit"
+read -r -p "Choose: " choice
+case "$choice" in
+  1) .venv/bin/python -c 'import core; print(core.host_info())' ;;
+  2) .venv/bin/python -c 'import core; print(core.list_vms())' ;;
+  3) .venv/bin/uvicorn api:app --host 0.0.0.0 --port 6969 ;;
+  4) .venv/bin/python bot/main.py ;;
+  5) exit 0 ;;
+  *) echo "Invalid option"; exit 1 ;;
+esac
